@@ -17,6 +17,7 @@ SERVER_PORT = 8080
 
 # --- ІНІЦІАЛІЗАЦІЯ ---
 pygame.init()
+pygame.mixer.init()
 flags = HWSURFACE | DOUBLEBUF
 screen = display.set_mode((WIDTH, HEIGHT), flags)
 display.set_caption("PING-PONG")
@@ -32,6 +33,9 @@ C_MAGENTA = (255, 0, 255)
 C_GOLD = (255, 200, 50)
 C_RED = (255, 50, 50)
 C_GREEN = (50, 255, 100)
+
+# --- ЗВУКИ ---
+sound_hit = pygame.mixer.Sound('hit.ogg')
 
 # --- ГЕНЕРАТОР СКІНІВ ---
 def generate_skins():
@@ -421,6 +425,12 @@ class GameClient:
              if self.pid != -1 and nscores[self.pid] > oscores[self.pid]:
                  self.profile.coins += 10
                  self.profile.save()
+
+        if new_state.get('sound_event'):
+            if new_state['sound_event'] == 'wall_hit':
+                sound_hit.play()
+            elif new_state['sound_event'] == 'platform_hit':
+                sound_hit.play()
 
         self.last_ball = (nx, ny)
 

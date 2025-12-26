@@ -23,6 +23,7 @@ class GameServer:
         self.ready = {0: False, 1: False}
         self.lock = threading.Lock()
         self.reset_game_state()
+        self.sound_event = None
 
     def reset_game_state(self):
         self.paddles = {0: 300, 1: 300}
@@ -75,7 +76,8 @@ class GameServer:
             "ball": self.ball,
             "scores": self.scores,
             "countdown": max(self.countdown, 0),
-            "winner": self.winner if self.game_over else None
+            "winner": self.winner if self.game_over else None,
+            "sound_event": self.sound_event
         }) + "\n"
         
         for pid, conn in self.clients.items():
@@ -85,6 +87,8 @@ class GameServer:
                 except Exception as e:
                     print(f"[Broadcast] Помилка надсилання гравцю {pid}: {e}")
                     self.connected[pid] = False
+        
+        self.sound_event = None
 
     def reset_ball(self):
         angle = random.uniform(-0.5, 0.5)
@@ -120,6 +124,7 @@ class GameServer:
                 if self.ball['y'] <= 10 or self.ball['y'] >= HEIGHT - 10:
                     self.ball['vy'] *= -1
                     self.ball['y'] = max(10, min(HEIGHT - 10, self.ball['y']))
+                    self.sound_event = "wall_hit"
 
                 if (20 <= self.ball['x'] <= 50 and 
                     self.paddles[0] - 10 <= self.ball['y'] <= self.paddles[0] + 110):
@@ -128,6 +133,7 @@ class GameServer:
                     relative_y = (self.ball['y'] - self.paddles[0] - 50) / 50
                     self.ball['vy'] += relative_y * 2
                     self.ball['x'] = 50
+                    self.sound_event = "platform_hit"
 
                 if (WIDTH - 50 <= self.ball['x'] <= WIDTH - 20 and 
                     self.paddles[1] - 10 <= self.ball['y'] <= self.paddles[1] + 110):
@@ -135,6 +141,7 @@ class GameServer:
                     relative_y = (self.ball['y'] - self.paddles[1] - 50) / 50
                     self.ball['vy'] += relative_y * 2
                     self.ball['x'] = WIDTH - 50
+                    self.sound_event = "platform_hit"
 
                 if self.ball['x'] < 0:
                     self.scores[1] += 1
@@ -157,6 +164,7 @@ class GameServer:
                     print(f"Гравець 1 переміг з рахунком {self.scores[0]}:{self.scores[1]}")
 
                 self.broadcast_state()
+                self.sound_event = None
                 
             time.sleep(0.016)
 
