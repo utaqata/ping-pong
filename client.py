@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pygame
 from pygame import *
 import socket
@@ -10,28 +9,28 @@ import random
 import os
 import colorsys
 
-# --- SETTINGS ---
+# --- НАЛАШТУВАННЯ ---
 WIDTH, HEIGHT = 900, 700
 FPS = 60
 SERVER_IP = 'localhost'
 SERVER_PORT = 8080
 
-# --- EASING FUNCTIONS ---
+# --- ФУНКЦІЇ ПОСЛАБЛЕННЯ ---
 def ease_out_cubic(t): return 1 - pow(1 - t, 3)
 def ease_out_back(t): c1 = 1.70158; c3 = c1 + 1; return 1 + c3 * pow(t - 1, 3) + c1 * pow(t - 1, 2)
 def ease_in_out_sin(t): return -(math.cos(math.pi * t) - 1) / 2
 def ease_out_expo(t): return 1 if t == 1 else 1 - pow(2, -10 * t)
 def ease_in_out_cubic(t): return 4 * t * t * t if t < 0.5 else 1 - pow(-2 * t + 2, 3) / 2
 
-# --- INITIALIZATION ---
+# --- ІНІЦІАЛІЗАЦІЯ ---
 pygame.init()
 pygame.mixer.init()
 flags = HWSURFACE | DOUBLEBUF
 screen = display.set_mode((WIDTH, HEIGHT), flags)
-display.set_caption("PING-PONG PREMIUM")
+display.set_caption("-- PING-PONG --")
 clock = pygame.time.Clock() 
 
-# --- COLORS ---
+# --- КОЛЬОРИ ---
 C_BG = (10, 5, 20)           
 C_WHITE = (220, 220, 255)
 C_CYAN = (0, 255, 255)
@@ -42,7 +41,7 @@ C_GREEN = (50, 255, 100)
 C_PURPLE = (180, 50, 255)
 C_ORANGE = (255, 150, 50)
 
-# --- SOUNDS ---
+# --- ЗВУКИ ---
 try:
     sound_hit = pygame.mixer.Sound('hit.ogg')
     sound_select = pygame.mixer.Sound('select.ogg')
@@ -52,7 +51,7 @@ except:
     sound_hit = DummySound()
     sound_select = DummySound()
 
-# --- SKIN GENERATOR ---
+# --- ГЕНЕРАТОР СКІНІВ ---
 def generate_skins():
     paddle_skins = {}
     ball_skins = {}
@@ -71,7 +70,7 @@ def generate_skins():
 
 PADDLE_SKINS, BALL_SKINS = generate_skins()
 
-# --- PLAYER PROFILE ---
+# --- ПРОФІЛЬ ГРАВЦЯ ---
 PLAYER_FILE = 'player_save.json'
 class PlayerProfile:
     def __init__(self):
@@ -103,7 +102,7 @@ class PlayerProfile:
             return True
         return False
 
-# --- VFX SYSTEM ---
+# --- СИСТЕМА VFX ---
 class VFXManager:
     def __init__(self):
         self.shake_timer = 0
@@ -212,7 +211,7 @@ class VFXManager:
             flash.fill((255, 255, 255, int(self.flash_alpha)))
             surf.blit(flash, (0, 0), special_flags=BLEND_ADD)
 
-# --- RENDERER ---
+# --- РЕНДЕРЕР ---
 class NeonRenderer:
     def __init__(self):
         self.main_surf = Surface((WIDTH, HEIGHT))
@@ -395,55 +394,45 @@ class NeonRenderer:
         self.draw_text(surf, f"CREDITS: {client.profile.coins}", WIDTH-130, HEIGHT-30, self.font_med, C_GOLD)
 
     def draw_shop(self, surf, client, alpha, t):
-        # 1. СТАТИЧНИЙ ТЕМНИЙ ФОН без анімації альфи (білий спалах виправлено!)
         overlay = Surface((WIDTH, HEIGHT))
         overlay.fill((0, 0, 0))
-        overlay.set_alpha(200)  # Тепер не залежить від alpha
+        overlay.set_alpha(200)
         surf.blit(overlay, (0, 0))
 
-        # Заголовок з плавною анімацією
         top_offset = ease_out_expo(alpha)
         top_y = 50 - int((1 - top_offset) * 50)
         
         self.draw_text(surf, "ARMORY", WIDTH//2, top_y, self.font_huge, C_CYAN)
         
-        # Анімація переключення вкладок
         tab_anim = client.shop_tab_anim
         
-        # Позиції для вкладок
         paddle_x = WIDTH//2 - 150
         ball_x = WIDTH//2 + 150
         
-        # Інтерполяція між позиціями
         if client.shop_tab == 'paddle':
             current_x = paddle_x + (ball_x - paddle_x) * (1 - tab_anim)
         else:
             current_x = ball_x + (paddle_x - ball_x) * (1 - tab_anim)
         
-        # Малюємо обидві вкладки
         paddle_alpha = tab_anim if client.shop_tab == 'paddle' else (1 - tab_anim)
         ball_alpha = tab_anim if client.shop_tab == 'ball' else (1 - tab_anim)
         
         paddle_scale = 1.0 + 0.2 * paddle_alpha
         ball_scale = 1.0 + 0.2 * ball_alpha
         
-        # Фон для вкладок з анімацією
         tab_bg_rect = Rect(WIDTH//2 - 250, top_y + 40, 500, 50)
         s_tab_bg = Surface((500, 50), SRCALPHA)
         pygame.draw.rect(s_tab_bg, (20, 10, 40, 180), s_tab_bg.get_rect(), border_radius=8)
         surf.blit(s_tab_bg, tab_bg_rect.topleft)
         
-        # Індикатор активної вкладки з плавним переміщенням
         indicator_width = 200
         indicator_x = current_x - indicator_width//2
         indicator_rect = Rect(int(indicator_x), top_y + 45, indicator_width, 40)
         
-        # Gradient indicator з glow ефектом
         s_indicator = Surface((indicator_width, 40), SRCALPHA)
         pygame.draw.rect(s_indicator, (80, 40, 120, 220), s_indicator.get_rect(), border_radius=8)
         surf.blit(s_indicator, indicator_rect.topleft)
         
-        # Додатковий glow для індикатора
         for i in range(2):
             s_glow = Surface((indicator_width + 20 + i*10, 40 + 20 + i*10), SRCALPHA)
             active_color = C_CYAN if client.shop_tab == 'paddle' else C_MAGENTA
@@ -451,14 +440,12 @@ class NeonRenderer:
             pygame.draw.rect(s_glow, (*active_color, glow_alpha), Rect(10+i*5, 10+i*5, indicator_width, 40), 3, border_radius=8)
             surf.blit(s_glow, (indicator_rect.x-10-i*5, indicator_rect.y-10-i*5), special_flags=BLEND_ADD)
         
-        # Текст вкладок з масштабуванням
         paddle_font = self.font_med
         ball_font = self.font_med
         
         paddle_col = tuple(int(c * (0.5 + 0.5 * paddle_alpha)) for c in C_CYAN)
         ball_col = tuple(int(c * (0.5 + 0.5 * ball_alpha)) for c in C_MAGENTA)
         
-        # Малюємо текст вкладок
         paddle_text = paddle_font.render("PADDLES", True, paddle_col)
         ball_text = ball_font.render("BALLS", True, ball_col)
         
@@ -468,16 +455,14 @@ class NeonRenderer:
         surf.blit(paddle_text, paddle_rect)
         surf.blit(ball_text, ball_rect)
 
-        # Список предметів з СИМЕТРИЧНОЮ анімацією
         skins = PADDLE_SKINS if client.shop_tab == 'paddle' else BALL_SKINS
         keys = list(skins.keys())
         start = int(client.shop_scroll)
         
         list_anim = client.shop_list_anim
         
-        # 2. СИМЕТРИЧНА анімація карток — без позиційної затримки
         for i in range(start, min(start + 6, len(keys))):
-            card_anim = ease_out_back(alpha)  # ПРОСТО альфа, без (i-start) * 0.15
+            card_anim = ease_out_back(alpha)
             
             y = 180 + (i - start) * 70
             is_sel = (i == client.shop_idx)
@@ -490,9 +475,8 @@ class NeonRenderer:
             rect = Rect(60, y, WIDTH-120, 60)
             self.draw_ui_box(surf, rect, col_bg, col_border, scale=scale)
         
-        # Малюємо вміст карток
         for i in range(start, min(start + 6, len(keys))):
-            card_anim = ease_out_back(alpha)  # ТЕПЕР СИМЕТРИЧНО!
+            card_anim = ease_out_back(alpha)
             
             key = keys[i]
             item = skins[key]
@@ -501,19 +485,16 @@ class NeonRenderer:
             scale = client.shop_anim_sizes[min(i - start, 5)] * card_anim * list_anim
             
             if card_anim > 0 and list_anim > 0.1:
-                # Прев'ю кольору
                 preview_x = 100
                 preview_y = y + 30
                 pygame.draw.circle(surf, item['color'], (preview_x, preview_y), int(18 * scale))
                 pygame.draw.circle(surf, C_WHITE, (preview_x, preview_y), int(18 * scale), 2)
                 
-                # Назва
                 name_alpha = int(255 * list_anim)
                 name_surf = self.font_small.render(item['name'], True, C_WHITE)
                 name_surf.set_alpha(name_alpha)
                 surf.blit(name_surf, (150, y + 20))
                 
-                # Статус
                 if (client.shop_tab == 'paddle' and client.profile.paddle_skin == key) or \
                    (client.shop_tab == 'ball' and client.profile.ball_skin == key):
                     state = "EQUIPPED"
@@ -586,7 +567,7 @@ class NeonRenderer:
             self.draw_text(surf, txt, WIDTH//2, HEIGHT//2 - 40, self.font_huge, col)
             self.draw_text(surf, "PRESS SPACE", WIDTH//2, HEIGHT//2 + 60, self.font_small, C_WHITE)
 
-# --- CLIENT ---
+# --- КЛІЄНТ ---
 class GameClient:
     def __init__(self):
         self.running = True
@@ -606,9 +587,8 @@ class GameClient:
         self.shop_scroll = 0
         self.shop_anim_sizes = [1.0]*6
         
-        # Анімації для магазину
-        self.shop_tab_anim = 1.0  # Анімація переключення вкладок (0->1)
-        self.shop_list_anim = 1.0  # Анімація списку при зміні вкладки (0->1)
+        self.shop_tab_anim = 1.0
+        self.shop_list_anim = 1.0
         self.shop_tab_target = 1.0
         self.shop_list_target = 1.0
         
@@ -707,13 +687,11 @@ class GameClient:
                         self.vfx.spawn_particles(WIDTH//2, 100, C_CYAN, 30, 2.0)
                         self.change_state('MENU')
                     elif e.key in [K_LEFT, K_RIGHT]:
-                        # Запускаємо анімацію переключення
                         old_tab = self.shop_tab
                         self.shop_tab = 'ball' if self.shop_tab == 'paddle' else 'paddle'
                         self.shop_idx = 0
                         self.shop_scroll = 0
                         
-                        # Скидаємо анімації
                         self.shop_tab_target = 0.0
                         self.shop_list_target = 0.0
                         
@@ -772,21 +750,17 @@ class GameClient:
         else:
             self.trans_anim = min(1.0, self.trans_anim + 0.08)
 
-        # Анімація меню
         for i in range(3):
             target = 1.1 if i == self.menu_idx else 1.0
             self.menu_anim_sizes[i] += (target - self.menu_anim_sizes[i]) * 0.2
         
-        # Анімація магазину
         for i in range(6):
             target = 1.05 if i == (self.shop_idx - self.shop_scroll) else 1.0
             self.shop_anim_sizes[i] += (target - self.shop_anim_sizes[i]) * 0.2
         
-        # Плавна анімація переключення вкладок
         self.shop_tab_anim += (self.shop_tab_target - self.shop_tab_anim) * 0.15
         self.shop_list_anim += (self.shop_list_target - self.shop_list_anim) * 0.12
         
-        # Коли анімація зникнення завершена, запускаємо анімацію появи
         if self.shop_list_anim < 0.05 and self.shop_list_target < 0.5:
             self.shop_list_target = 1.0
             self.shop_tab_target = 1.0
